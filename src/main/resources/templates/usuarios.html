@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Usuarios - Centro Médico Ollantay</title>
+    <link rel="stylesheet" th:href="@{/css/estilo.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: cabecera('usuarios')}"></div>
+
+<div class="contenido">
+    <div class="aviso aviso-ok" th:if="${ok}" th:text="${ok}"></div>
+    <div class="aviso aviso-error" th:if="${error}" th:text="${error}"></div>
+
+    <div class="card">
+        <h3>Nuevo usuario</h3>
+        <form th:action="@{/usuarios}" method="post" class="toolbar">
+            <div class="campo"><label>Usuario:</label><input type="text" name="usuario"/></div>
+            <div class="campo"><label>Contraseña:</label><input type="password" name="clave"/></div>
+            <div class="campo"><label>Rol:</label>
+                <select name="rol">
+                    <option value="USUARIO">USUARIO</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+            </div>
+            <button class="btn btn-lima" type="submit">Crear</button>
+        </form>
+    </div>
+
+    <div class="card" style="padding:0; overflow:auto;">
+        <table>
+            <thead><tr><th>Usuario</th><th>Rol</th><th>Acciones</th></tr></thead>
+            <tbody>
+            <tr th:each="u : ${usuarios}">
+                <td th:text="${u.usuario}"></td>
+                <td th:text="${u.rol}"></td>
+                <td style="white-space:nowrap;">
+                    <form th:action="@{/usuarios/{id}/clave(id=${u.id})}" method="post" style="display:inline;">
+                        <input type="password" name="clave" placeholder="Nueva contraseña"
+                               style="width:150px; display:inline;"/>
+                        <button class="btn btn-info" style="padding:5px 10px;" type="submit">Cambiar contraseña</button>
+                    </form>
+                    <form th:action="@{/usuarios/{id}/eliminar(id=${u.id})}" method="post" style="display:inline;"
+                          onsubmit="return confirm('¿Eliminar este usuario?');">
+                        <button class="btn btn-danger" style="padding:5px 10px;" type="submit">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

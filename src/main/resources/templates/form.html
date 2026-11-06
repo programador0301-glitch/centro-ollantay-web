@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Paciente - Centro Médico Ollantay</title>
+    <link rel="stylesheet" th:href="@{/css/estilo.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: cabecera('pacientes')}"></div>
+
+<div class="contenido">
+    <div class="aviso aviso-error" th:if="${error}" th:text="${error}"></div>
+
+    <div class="card">
+        <h2 th:text="${paciente.id} == null ? 'Nuevo paciente' : 'Editar paciente'">Paciente</h2>
+
+        <form th:action="@{/pacientes}" method="post" th:object="${paciente}" id="formPaciente">
+            <input type="hidden" th:field="*{id}" id="pacienteId"/>
+
+            <div class="fila">
+                <div>
+                    <label>HC:</label>
+                    <input type="text" th:field="*{hc}" id="hc"/>
+                    <div class="rojo" id="avisoHc"></div>
+                </div>
+                <div>
+                    <label>Nombres completos:</label>
+                    <input type="text" th:field="*{nombres}" id="nombres"/>
+                    <div class="azul" id="avisoCoinc"></div>
+                </div>
+            </div>
+
+            <div class="fila">
+                <div>
+                    <label>Fecha de nacimiento:</label>
+                    <input type="date" th:field="*{fechaNacimiento}" id="fnac"/>
+                </div>
+                <div>
+                    <label>Edad:</label>
+                    <input type="text" id="edad" readonly value="-"/>
+                </div>
+            </div>
+
+            <div class="fila">
+                <div>
+                    <label>Tipo de documento:</label>
+                    <select th:field="*{tipoDocumento}" id="tipoDoc">
+                        <option th:each="t : ${tipos}" th:value="${t}" th:text="${t}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label>N° de documento:</label>
+                    <input type="text" th:field="*{numeroDocumento}" id="numDoc"/>
+                    <div class="suave" id="reglaDoc">El DNI debe tener 8 dígitos.</div>
+                    <div class="rojo" id="avisoDoc"></div>
+                </div>
+            </div>
+
+            <div class="fila">
+                <div>
+                    <label>Teléfono:</label>
+                    <input type="text" th:field="*{telefono}"/>
+                </div>
+                <div>
+                    <label>Distrito / zona:</label>
+                    <select th:field="*{distrito}">
+                        <option value="">-- Seleccione --</option>
+                        <option th:each="d : ${distritos}" th:value="${d}" th:text="${d}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Dirección (calle y número):</label>
+            <input type="text" th:field="*{direccion}"/>
+
+            <div style="margin-top:18px; display:flex; gap:10px;">
+                <button class="btn btn-lima" type="submit">Guardar</button>
+                <a class="btn btn-gris" th:href="@{/pacientes}">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const idEl = document.getElementById('pacienteId');
+    const hcEl = document.getElementById('hc');
+    const nombresEl = document.getElementById('nombres');
+    const fnacEl = document.getElementById('fnac');
+    const edadEl = document.getElementById('edad');
+    const tipoEl = document.getElementById('tipoDoc');
+    const numEl = document.getElementById('numDoc');
+    const reglaEl = document.getElementById('reglaDoc');
+    const avisoHc = document.getElementById('avisoHc');
+    const avisoDoc = document.getElementById('avisoDoc');
+    const avisoCoinc = document.getElementById('avisoCoinc');
+
+    // Devuelve "&id=NN" solo si estamos editando (evita enviar id vacío)
+    function parteId() { return idEl.value ? '&id=' + idEl.value : ''; }
+
+    // Edad automática
+    function calcularEdad() {
+        if (!fnacEl.value) { edadEl.value = '-'; return; }
+        const n = new Date(fnacEl.value);
+        const hoy = new Date();
+        let e = hoy.getFullYear() - n.getFullYear();
+        const m = hoy.getMonth() - n.getMonth();
+        if (m < 0 || (m === 0 && hoy.getDate() < n.getDate())) e--;
+        edadEl.value = (e >= 0 ? e + ' años' : '-');
+    }
+    fnacEl.addEventListener('change', calcularEdad);
+
+    // Regla del documento
+    function actualizarRegla() {
+        reglaEl.textContent = (tipoEl.value === 'DNI')
+            ? 'El DNI debe tener 8 dígitos.'
+            : 'El carné de extranjería debe tener 9 dígitos.';
+    }
+    tipoEl.addEventListener('change', actualizarRegla);
+
+    // Aviso HC duplicada (en vivo)
+    let tHc;
+    hcEl.addEventListener('input', () => {
+        clearTimeout(tHc);
+        tHc = setTimeout(() => {
+            const hc = hcEl.value.trim();
+            if (!hc) { avisoHc.textContent = ''; return; }
+            fetch('/api/existe-hc?hc=' + encodeURIComponent(hc) + parteId())
+                .then(r => r.json())
+                .then(d => avisoHc.textContent = d.existe
+                    ? 'ATENCIÓN: la HC "' + hc + '" ya está registrada (duplicada).' : '');
+        }, 300);
+    });
+
+    // Aviso documento duplicado (en vivo)
+    let tDoc;
+    numEl.addEventListener('input', () => {
+        clearTimeout(tDoc);
+        tDoc = setTimeout(() => {
+            const num = numEl.value.trim();
+            if (!num) { avisoDoc.textContent = ''; return; }
+            fetch('/api/existe-doc?num=' + encodeURIComponent(num) + parteId())
+                .then(r => r.json())
+                .then(d => avisoDoc.textContent = d.existe
+                    ? 'ATENCIÓN: el documento "' + num + '" ya está registrado en otro paciente.' : '');
+        }, 300);
+    });
+
+    // Coincidencias de nombres (posibles familiares, en vivo)
+    let tNom;
+    nombresEl.addEventListener('input', () => {
+        clearTimeout(tNom);
+        tNom = setTimeout(() => {
+            const nom = nombresEl.value.trim();
+            if (nom.length < 3) { avisoCoinc.textContent = ''; return; }
+            fetch('/api/coincidencias?nombres=' + encodeURIComponent(nom) + parteId())
+                .then(r => r.json())
+                .then(lista => {
+                    if (!lista.length) { avisoCoinc.textContent = ''; return; }
+                    let txt = 'Coincidencias (posibles familiares): ';
+                    txt += lista.slice(0, 4).map(p => 'HC ' + p.hc + ' - ' + p.nombres).join(' | ');
+                    if (lista.length > 4) txt += ' ... (+' + (lista.length - 4) + ' más)';
+                    avisoCoinc.textContent = txt;
+                });
+        }, 350);
+    });
+
+    // Al cargar (modo editar)
+    actualizarRegla();
+    calcularEdad();
+</script>
+</body>
+</html>
