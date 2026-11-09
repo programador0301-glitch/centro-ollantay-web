@@ -60,7 +60,7 @@ public class DataInitializer implements CommandLineRunner {
         Random r = new Random(2026);
         LocalDate hoy = LocalDate.now();
 
-        int total = 60;
+        int total = 5000;
         for (int i = 1; i <= total; i++) {
             Paciente p = new Paciente();
             p.setHc(String.valueOf(i));
