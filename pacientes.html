@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Pacientes - Centro Médico Ollantay</title>
+    <link rel="stylesheet" th:href="@{/css/estilo.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: cabecera('pacientes')}"></div>
+
+<div class="contenido">
+
+    <div class="aviso aviso-ok" th:if="${ok}" th:text="${ok}"></div>
+    <div class="aviso aviso-error" th:if="${error}" th:text="${error}"></div>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <h2 style="margin:0;">Pacientes <span class="suave" th:text="'(' + ${total} + ')'">(0)</span></h2>
+            <a class="btn btn-lima" th:href="@{/pacientes/nuevo}">+ Nuevo paciente</a>
+        </div>
+
+        <!-- Búsqueda general -->
+        <form th:action="@{/pacientes}" method="get" class="toolbar" style="margin-top:12px;">
+            <div class="campo">
+                <label>Buscar (HC / nombres / documento / teléfono / dirección):</label>
+                <input type="text" name="buscar" th:value="${buscar}" style="width:320px;"/>
+            </div>
+            <button class="btn" type="submit">Buscar</button>
+            <a class="btn btn-gris" th:href="@{/pacientes}">Mostrar todo</a>
+        </form>
+
+        <!-- Filtro por distrito -->
+        <form th:action="@{/pacientes}" method="get" class="toolbar">
+            <div class="campo">
+                <label>Filtrar por distrito / zona:</label>
+                <select name="distrito" style="width:260px;">
+                    <option value="">(Todos)</option>
+                    <option th:each="d : ${distritos}" th:value="${d}" th:text="${d}"
+                            th:selected="${d == distritoSel}"></option>
+                </select>
+            </div>
+            <button class="btn" type="submit">Filtrar</button>
+            <a class="btn btn-accent"
+               th:href="@{/pacientes/exportar(buscar=${buscar}, distrito=${distritoSel})}">Exportar a Excel</a>
+        </form>
+    </div>
+
+    <div class="card" style="padding:0; overflow:auto;">
+        <table>
+            <thead>
+            <tr>
+                <th>HC</th><th>Nombres completos</th><th>F. Nacimiento</th><th>Edad</th>
+                <th>Tipo doc.</th><th>N° documento</th><th>Teléfono</th><th>Distrito</th><th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${pacientes}">
+                <td th:text="${p.hc}"></td>
+                <td th:text="${p.nombres}"></td>
+                <td th:text="${p.fechaTexto}"></td>
+                <td th:text="${p.edad < 0 ? '-' : p.edad}"></td>
+                <td th:text="${p.tipoDocumento}"></td>
+                <td th:text="${p.numeroDocumento}"></td>
+                <td th:text="${p.telefono}"></td>
+                <td th:text="${p.distrito}"></td>
+                <td style="white-space:nowrap;">
+                    <a class="btn btn-info" style="padding:5px 10px;"
+                       th:href="@{/pacientes/{id}/editar(id=${p.id})}">Editar</a>
+                    <form th:if="${esAdmin}" th:action="@{/pacientes/{id}/eliminar(id=${p.id})}" method="post"
+                          style="display:inline;"
+                          onsubmit="return confirm('¿Está seguro de eliminar a este paciente?');">
+                        <button class="btn btn-danger" style="padding:5px 10px;" type="submit">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${pacientes.isEmpty()}">
+                <td colspan="9" class="suave" style="text-align:center; padding:20px;">
+                    No hay pacientes para mostrar.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

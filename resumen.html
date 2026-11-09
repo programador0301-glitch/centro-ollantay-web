@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Resumen - Centro Médico Ollantay</title>
+    <link rel="stylesheet" th:href="@{/css/estilo.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: cabecera('resumen')}"></div>
+
+<div class="contenido">
+
+    <!-- Tarjetas de totales -->
+    <div class="cards4">
+        <div class="stat" style="border-left-color:#083B66;">
+            <div class="num" style="color:#083B66;" th:text="${total}">0</div>
+            <div class="etq">Total de pacientes</div>
+        </div>
+        <div class="stat" style="border-left-color:#2E6FA8;">
+            <div class="num" style="color:#2E6FA8;" th:text="${conDni}">0</div>
+            <div class="etq">Con DNI</div>
+        </div>
+        <div class="stat" style="border-left-color:#E8A13A;">
+            <div class="num" style="color:#E8A13A;" th:text="${conCe}">0</div>
+            <div class="etq">Con carné de extranjería</div>
+        </div>
+        <div class="stat" style="border-left-color:#A0C030;">
+            <div class="num" style="color:#6B8A1E;" th:text="${numDistritos}">0</div>
+            <div class="etq">Distritos con pacientes</div>
+        </div>
+    </div>
+
+    <div class="grid2">
+        <!-- Por tipo de documento -->
+        <div class="card">
+            <h3>Pacientes por tipo de documento</h3>
+            <div class="graf-fila" th:each="e,it : ${porTipo}">
+                <div class="etq" th:text="${e.key}"></div>
+                <div class="barra-cont">
+                    <div class="barra"
+                         th:style="|width:${e.value * 100 / maxTipo}%; background:${it.index == 0 ? '#083B66' : '#A0C030'};|"></div>
+                </div>
+                <div class="val" th:text="${e.value}"></div>
+            </div>
+        </div>
+
+        <!-- Por rango de edad -->
+        <div class="card">
+            <h3>Pacientes por rango de edad</h3>
+            <div class="graf-fila" th:each="e : ${porEdad}">
+                <div class="etq" th:text="${e.key}"></div>
+                <div class="barra-cont">
+                    <div class="barra"
+                         th:style="|width:${e.value * 100 / maxEdad}%; background:#1E88A8;|"></div>
+                </div>
+                <div class="val" th:text="${e.value}"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Por distrito -->
+    <div class="card">
+        <h3>Pacientes por distrito</h3>
+        <div th:if="${porDistrito.isEmpty()}" class="suave">Aún no hay pacientes con distrito registrado.</div>
+        <div class="graf-fila" th:each="e : ${porDistrito}">
+            <div class="etq" th:text="${e.key}"></div>
+            <div class="barra-cont">
+                <div class="barra"
+                     th:style="|width:${e.value * 100 / maxDistrito}%; background:#083B66;|"></div>
+            </div>
+            <div class="val" th:text="${e.value}"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
